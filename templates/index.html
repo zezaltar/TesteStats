@@ -153,56 +153,49 @@
             transform: translateY(-2px);
         }
 
-        #comparisonStats {
+        /* Estilos do gráfico e container */
+        .comparison-chart-container {
             position: relative;
-            z-index: 1;
+            width: 100%;
+            margin: 20px 0;
+            overflow: hidden;
         }
 
         .comparison-chart {
             width: 100%;
             height: 400px;
-            margin-bottom: 20px;
-            position: relative;
+            margin: 0;
+            padding: 0;
             z-index: 1;
         }
 
-        .stats-cards {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
+        /* Ajustes para o container de estatísticas */
+        .stats-cards-container {
             margin-top: 20px;
-            position: relative;
             z-index: 2;
+            position: relative;
+            background: white;
         }
 
         .stats-card {
-            flex: 1;
-            min-width: 250px;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,.125);
+            border-radius: .25rem;
             padding: 15px;
-            margin-bottom: 0;
+            margin-bottom: 15px;
         }
 
+        /* Media queries para responsividade */
         @media (max-width: 768px) {
             .comparison-chart {
                 height: 300px;
             }
-
-            .stats-card {
-                min-width: 100%;
-            }
         }
 
-        /* Ajuste para o container do gráfico */
-        #comparisonChartContainer {
-            width: 100%;
-            margin-bottom: 30px;
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        @media (max-width: 576px) {
+            .comparison-chart {
+                height: 250px;
+            }
         }
     </style>
 </head>
@@ -378,26 +371,44 @@
                                 </select>
                             </div>
                         </div>
-                        <div id="comparisonStats" class="d-none mt-4">
-                            <div id="comparisonChartContainer">
+                        <div id="comparisonStats" class="d-none">
+                            <!-- Container do gráfico -->
+                            <div class="comparison-chart-container">
                                 <div id="comparacaoGrafico" class="comparison-chart"></div>
                             </div>
-                            <div class="stats-cards">
-                                <div class="stats-card">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-home me-2"></i>
-                                        Estatísticas como Mandante
-                                    </h5>
-                                    <div id="time1Stats"></div>
-                                </div>
-                                <div class="stats-card">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-plane me-2"></i>
-                                        Estatísticas como Visitante
-                                    </h5>
-                                    <div id="time2Stats"></div>
+                            
+                            <!-- Container das estatísticas -->
+                            <div class="stats-cards-container">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="stats-card">
+                                            <div class="card-header bg-primary text-white">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-home me-2"></i>
+                                                    Estatísticas como Mandante
+                                                </h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="time1Stats"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="stats-card">
+                                            <div class="card-header bg-secondary text-white">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-plane me-2"></i>
+                                                    Estatísticas como Visitante
+                                                </h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="time2Stats"></div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+
                             <div id="dicasApostas" class="mb-4"></div>
                             
                             <!-- Tabela de Classificação -->
@@ -468,7 +479,7 @@
             const times = timesPorLiga[liga] || [];
             
             // Limpa as opções atuais
-            selectTime.innerHTML = '<option value="">Selecione um time</option>';
+            selectTime.innerHTML = '';
             
             // Adiciona as novas opções
             times.forEach(time => {
@@ -481,17 +492,97 @@
 
         // Event listeners para os selects de liga
         document.getElementById('ligaSelect').addEventListener('change', function() {
+            const liga = this.value;
             const timeSelect = document.getElementById('timeSelect');
+            
+            // Atualizar times disponíveis
             atualizarTimes(this, timeSelect);
-            document.getElementById('timeStats').classList.add('d-none');
+            
+            // Buscar e exibir classificação
+            if (liga) {
+                mostrarLoading();
+                fetch(`/classificacao/${encodeURIComponent(liga)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+
+                        const tabelaBody = document.getElementById('tabelaClassificacaoIndividual');
+                        tabelaBody.innerHTML = '';
+                        
+                        data.forEach(time => {
+                            const tr = document.createElement('tr');
+                            
+                            // Destacar o time selecionado, se houver
+                            const timeSelecionado = timeSelect.value;
+                            if (timeSelecionado && time.Time === timeSelecionado) {
+                                tr.classList.add('table-primary');
+                            }
+                            
+                            tr.innerHTML = `
+                                <td>${time.Pos}</td>
+                                <td>${time.Time}</td>
+                                <td>${time.P}</td>
+                                <td>${time.J}</td>
+                                <td>${time.V}</td>
+                                <td>${time.E}</td>
+                                <td>${time.D}</td>
+                                <td>${time.GP}</td>
+                                <td>${time.GC}</td>
+                                <td>${time.SG}</td>
+                            `;
+                            tabelaBody.appendChild(tr);
+                        });
+                        
+                        // Mostrar a tabela
+                        document.getElementById('classificacaoIndividual').classList.remove('d-none');
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('Erro ao carregar classificação');
+                    })
+                    .finally(() => {
+                        ocultarLoading();
+                    });
+            } else {
+                document.getElementById('classificacaoIndividual').classList.add('d-none');
+            }
         });
 
+        // Atualizar classificação quando um time é selecionado
+        document.getElementById('timeSelect').addEventListener('change', function() {
+            const timeSelecionado = this.value;
+            const linhas = document.querySelectorAll('#tabelaClassificacaoIndividual tr');
+            
+            linhas.forEach(linha => {
+                const timeNaLinha = linha.querySelector('td:nth-child(2)').textContent;
+                if (timeNaLinha === timeSelecionado) {
+                    linha.classList.add('table-primary');
+                } else {
+                    linha.classList.remove('table-primary');
+                }
+            });
+        });
+
+        // Event listeners para os selects de liga
         document.getElementById('ligaCompareSelect').addEventListener('change', function() {
+            atualizarTimes(this, document.getElementById('time1Select'));
+            atualizarTimes(this, document.getElementById('time2Select'));
+        });
+
+        // Inicialização
+        window.addEventListener('load', function() {
+            const ligaSelect = document.getElementById('ligaSelect');
+            const ligaCompareSelect = document.getElementById('ligaCompareSelect');
+            const timeSelect = document.getElementById('timeSelect');
             const time1Select = document.getElementById('time1Select');
             const time2Select = document.getElementById('time2Select');
-            atualizarTimes(this, time1Select);
-            atualizarTimes(this, time2Select);
-            document.getElementById('comparisonStats').classList.add('d-none');
+
+            atualizarTimes(ligaSelect, timeSelect);
+            atualizarTimes(ligaCompareSelect, time1Select);
+            atualizarTimes(ligaCompareSelect, time2Select);
         });
 
         function mostrarLoading() {
@@ -502,17 +593,264 @@
             document.querySelector('.loading').style.display = 'none';
         }
 
-        function atualizarComparacao() {
-            const liga = document.getElementById('ligaCompareSelect').value;
-            const time1 = document.getElementById('time1Select').value;
-            const time2 = document.getElementById('time2Select').value;
+        function exibirEstatisticas(stats, elementId) {
+            const element = document.getElementById(elementId);
+            if (!stats) {
+                element.innerHTML = '<div class="alert alert-warning">Não há dados disponíveis para este time.</div>';
+                return;
+            }
 
-            if (!liga || !time1 || !time2) {
+            element.innerHTML = `
+                <div class="stats-container">
+                    <div class="stats-section">
+                        <h5>Desempenho</h5>
+                        <table class="table table-striped">
+                            <tbody>
+                                <tr>
+                                    <td>Jogos</td>
+                                    <td class="text-end"><strong>${stats.total_jogos}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Vitórias</td>
+                                    <td class="text-end"><strong>${stats.vitorias}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Empates</td>
+                                    <td class="text-end"><strong>${stats.empates}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Derrotas</td>
+                                    <td class="text-end"><strong>${stats.derrotas}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Aproveitamento</td>
+                                    <td class="text-end"><strong>${stats.aproveitamento.toFixed(1)}%</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="stats-section">
+                        <h5>Gols</h5>
+                        <table class="table table-striped">
+                            <tbody>
+                                <tr>
+                                    <td>Gols Marcados</td>
+                                    <td class="text-end"><strong>${stats.gols_feitos}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Gols Sofridos</td>
+                                    <td class="text-end"><strong>${stats.gols_sofridos}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Gols 1º Tempo (Marcados)</td>
+                                    <td class="text-end"><strong>${stats.ht_gols_feitos}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Gols 1º Tempo (Sofridos)</td>
+                                    <td class="text-end"><strong>${stats.ht_gols_sofridos}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Média de Gols p/ Jogo</td>
+                                    <td class="text-end"><strong>${stats.media_gols.toFixed(2)}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="stats-section">
+                        <h5>Estatísticas Adicionais</h5>
+                        <table class="table table-striped">
+                            <tbody>
+                                <tr>
+                                    <td>Chutes por Jogo</td>
+                                    <td class="text-end"><strong>${stats.chutes.toFixed(1)}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Chutes no Alvo por Jogo</td>
+                                    <td class="text-end"><strong>${stats.chutes_alvo.toFixed(1)}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Cartões Amarelos por Jogo</td>
+                                    <td class="text-end"><strong>${stats.cartoes_amarelos.toFixed(2)}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Cartões Vermelhos por Jogo</td>
+                                    <td class="text-end"><strong>${stats.cartoes_vermelhos.toFixed(2)}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="stats-section">
+                        <h5>Over/Under</h5>
+                        <table class="table table-striped">
+                            <tbody>
+                                <tr>
+                                    <td>Over 0.5 HT</td>
+                                    <td class="text-end"><strong>${stats.ht_over_05.toFixed(1)}%</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Over 1.5 HT</td>
+                                    <td class="text-end"><strong>${stats.ht_over_15.toFixed(1)}%</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Over 0.5 FT</td>
+                                    <td class="text-end"><strong>${stats.ft_over_05.toFixed(1)}%</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Over 1.5 FT</td>
+                                    <td class="text-end"><strong>${stats.ft_over_15.toFixed(1)}%</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Over 2.5 FT</td>
+                                    <td class="text-end"><strong>${stats.ft_over_25.toFixed(1)}%</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Over 3.5 FT</td>
+                                    <td class="text-end"><strong>${stats.ft_over_35.toFixed(1)}%</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="stats-section">
+                        <h5>Outras Estatísticas</h5>
+                        <table class="table table-striped">
+                            <tbody>
+                                <tr>
+                                    <td>BTTS (Ambos Marcam)</td>
+                                    <td class="text-end"><strong>${stats.btts.toFixed(1)}%</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Clean Sheets</td>
+                                    <td class="text-end"><strong>${stats.clean_sheets.toFixed(1)}%</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    ${stats.tendencias && stats.tendencias.length > 0 ? `
+                    <div class="stats-section">
+                        <h5>Dicas para Apostas</h5>
+                        <div class="alert alert-info">
+                            <ul class="mb-0">
+                                ${stats.tendencias.map(tendencia => `<li>${tendencia}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            element.classList.remove('d-none');
+        }
+
+        function exibirUltimosJogos(jogos) {
+            const lista = document.getElementById('ultimosJogos');
+            lista.innerHTML = `
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Local</th>
+                            <th>Adversário</th>
+                            <th>Placar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${jogos.map(jogo => `
+                            <tr>
+                                <td>${jogo.data}</td>
+                                <td>${jogo.casa ? 'Casa' : 'Fora'}</td>
+                                <td>${jogo.adversario}</td>
+                                <td><strong>${jogo.gols_favor} - ${jogo.gols_contra}</strong></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function exibirDicasApostas(dicas) {
+            const container = document.getElementById('dicasApostas');
+            if (!dicas || dicas.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">Não há dicas de apostas disponíveis para este confronto.</div>';
+                return;
+            }
+
+            const html = `
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Dicas de Apostas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Dica</th>
+                                        <th>Confiança</th>
+                                        <th>Razão</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${dicas.map(dica => `
+                                        <tr>
+                                            <td><strong>${dica.tipo}</strong></td>
+                                            <td>
+                                                <span class="badge ${dica.confianca === 'Alta' ? 'bg-success' : 'bg-warning'}">
+                                                    ${dica.confianca}
+                                                </span>
+                                            </td>
+                                            <td>${dica.razao}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Event Listeners
+        document.getElementById('timeSelect').addEventListener('change', function() {
+            const time = this.value;
+            const liga = document.getElementById('ligaSelect').value;
+            
+            if (!time) {
+                document.getElementById('timeStats').classList.add('d-none');
                 return;
             }
 
             mostrarLoading();
+            Promise.all([
+                fetch(`/estatisticas_time/${liga}/${time}`).then(r => r.json()),
+                fetch(`/ultimos_jogos/${liga}/${time}`).then(r => r.json())
+            ]).then(([data, jogos]) => {
+                document.getElementById('timeStats').classList.remove('d-none');
+                exibirEstatisticas(data.geral, 'geral');
+                exibirEstatisticas(data.casa, 'casa');
+                exibirEstatisticas(data.fora, 'fora');
+                exibirUltimosJogos(jogos);
+                ocultarLoading();
+            });
+        });
 
+        function atualizarComparacao() {
+            const time1 = document.getElementById('time1Select').value;
+            const time2 = document.getElementById('time2Select').value;
+            const liga = document.getElementById('ligaCompareSelect').value;
+
+            if (!time1 || !time2) return;
+
+            mostrarLoading();
+            
+            // Mostrar a div de comparação
+            document.getElementById('comparisonStats').classList.remove('d-none');
+            
             fetch(`/comparar/${encodeURIComponent(liga)}/${encodeURIComponent(time1)}/${encodeURIComponent(time2)}`)
                 .then(response => response.json())
                 .then(data => {
@@ -521,80 +859,57 @@
                         return;
                     }
 
-                    // Mostra a seção de comparação
-                    document.getElementById('comparisonStats').classList.remove('d-none');
+                    // Atualizar gráfico de comparação
+                    Plotly.newPlot('comparacaoGrafico', JSON.parse(data.grafico));
 
-                    // Atualiza o gráfico
-                    const graficoDiv = document.getElementById('comparacaoGrafico');
-                    graficoDiv.innerHTML = '';
-                    if (data.grafico) {
-                        graficoDiv.innerHTML = data.grafico;
-                    }
-
-                    // Atualiza as estatísticas dos times
+                    // Atualizar estatísticas dos times
                     exibirEstatisticas(data.time1, 'time1Stats');
                     exibirEstatisticas(data.time2, 'time2Stats');
 
-                    // Atualiza as dicas de apostas
-                    const dicasDiv = document.getElementById('dicasApostas');
-                    if (data.dicas) {
-                        dicasDiv.innerHTML = `
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Dicas de Apostas</h5>
-                                </div>
-                                <div class="card-body">
-                                    ${data.dicas}
-                                </div>
-                            </div>
-                        `;
-                    }
+                    // Atualizar dicas de apostas
+                    exibirDicasApostas(data.dicas);
 
-                    // Atualiza a tabela de classificação
-                    if (data.tabela) {
-                        const tabelaDiv = document.getElementById('tabelaClassificacao');
-                        tabelaDiv.innerHTML = data.tabela;
-
-                        // Destaca os times comparados
-                        if (data.times_comparados) {
-                            const linhasTabela = tabelaDiv.getElementsByTagName('tr');
-                            Array.from(linhasTabela).forEach(linha => {
-                                const timeCell = linha.cells[1];
-                                if (timeCell && data.times_comparados.includes(timeCell.textContent.trim())) {
-                                    linha.classList.add('table-primary');
-                                }
-                            });
+                    // Atualizar tabela de classificação
+                    const tabelaBody = document.getElementById('tabelaClassificacao');
+                    tabelaBody.innerHTML = '';
+                    
+                    data.tabela.forEach(time => {
+                        const tr = document.createElement('tr');
+                        
+                        // Destacar times que estão sendo comparados
+                        if (data.times_comparados.includes(time.Time)) {
+                            tr.classList.add('table-primary');
                         }
-                    }
+                        
+                        tr.innerHTML = `
+                            <td>${time.Pos}</td>
+                            <td>${time.Time}</td>
+                            <td>${time.P}</td>
+                            <td>${time.J}</td>
+                            <td>${time.V}</td>
+                            <td>${time.E}</td>
+                            <td>${time.D}</td>
+                            <td>${time.GP}</td>
+                            <td>${time.GC}</td>
+                            <td>${time.SG}</td>
+                        `;
+                        tabelaBody.appendChild(tr);
+                    });
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao carregar os dados');
+                    alert('Erro ao carregar comparação');
                 })
                 .finally(() => {
                     ocultarLoading();
                 });
         }
 
-        // Event listeners para os selects de times na comparação
         document.getElementById('time1Select').addEventListener('change', atualizarComparacao);
         document.getElementById('time2Select').addEventListener('change', atualizarComparacao);
-
-        // Inicializa os selects de times
-        const ligaSelect = document.getElementById('ligaSelect');
-        const ligaCompareSelect = document.getElementById('ligaCompareSelect');
-        const timeSelect = document.getElementById('timeSelect');
-        const time1Select = document.getElementById('time1Select');
-        const time2Select = document.getElementById('time2Select');
-
-        // Preenche os selects de liga
-        Object.keys(timesPorLiga).forEach(liga => {
-            [ligaSelect, ligaCompareSelect].forEach(select => {
-                const option = document.createElement('option');
-                option.value = liga;
-                option.textContent = liga;
-                select.appendChild(option);
-            });
+        document.getElementById('ligaCompareSelect').addEventListener('change', function() {
+            atualizarTimes(this, document.getElementById('time1Select'));
+            atualizarTimes(this, document.getElementById('time2Select'));
         });
     </script>
 </body>
