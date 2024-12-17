@@ -568,12 +568,12 @@ def comparar_times(liga, time1, time2):
         if df is None:
             return jsonify({'error': 'Erro ao obter dados da liga'})
         
-        # Calcular estatísticas dos times
-        time1_stats = calcular_estatisticas(df, time1)
-        time2_stats = calcular_estatisticas(df, time2)
+        # Calcular estatísticas dos times (time1 como mandante, time2 como visitante)
+        time1_stats = calcular_estatisticas(df, time1, 'casa')
+        time2_stats = calcular_estatisticas(df, time2, 'fora')
         
         # Gerar gráfico de comparação
-        grafico = gerar_grafico_comparacao(time1_stats, time2_stats, time1, time2)
+        grafico = gerar_grafico_comparacao(time1_stats, time2_stats, f"{time1} (Casa)", f"{time2} (Fora)")
         
         # Gerar dicas de apostas
         dicas = gerar_dicas_apostas(time1_stats, time2_stats)
