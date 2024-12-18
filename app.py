@@ -14,10 +14,18 @@ from datetime import timedelta
 
 # Configuração do Flask e Cache
 app = Flask(__name__)
-cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+app.config['CACHE_TYPE'] = 'simple'
+app.config['CACHE_DEFAULT_TIMEOUT'] = 3600  # 1 hora
+cache = Cache(app)
 
 # Configurações
-CACHE_TIMEOUT = 3600  # 1 hora
+LIGAS_PRINCIPAIS = [
+    'Premier League (Inglaterra)',
+    'La Liga (Espanha)',
+    'Serie A (Itália)',
+    'Bundesliga (Alemanha)',
+    'Ligue 1 (França)'
+]
 LIGAS = {
     'Premier League (Inglaterra)': 'https://www.football-data.co.uk/mmz4281/2425/E0.csv',
     'Championship (Inglaterra)': 'https://www.football-data.co.uk/mmz4281/2425/E1.csv',
@@ -59,12 +67,26 @@ class EstatisticasCalculator:
             return total_gols.mean()
         return 0
     
+def pre_carregar_dados():
+    """Pré-carrega os dados das ligas principais em cache"""
+    for liga in LIGAS_PRINCIPAIS:
+        baixar_dados(liga)
+
 @cache.memoize(timeout=300)
 def baixar_dados(liga):
     url = LIGAS[liga]
     try:
+        # Tentar carregar do cache primeiro
+        cached_data = cache.get(f"df_{liga}")
+        if cached_data is not None:
+            return cached_data
+
+        # Se não estiver em cache, baixar da internet
         df = pd.read_csv(url)
         df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
+        
+        # Armazenar no cache
+        cache.set(f"df_{liga}", df)
         return df
     except Exception as e:
         print(f"Erro ao baixar dados: {e}")
@@ -500,6 +522,10 @@ def classificacao(liga):
     except Exception as e:
         print(f"Erro ao obter classificação: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.before_first_request
+def init_cache():
+    pre_carregar_dados()
 
 if __name__ == '__main__':
     app.run(debug=True)
