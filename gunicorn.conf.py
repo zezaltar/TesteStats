@@ -11,10 +11,10 @@ keepalive = 2
 max_requests = 1000
 max_requests_jitter = 50
 graceful_timeout = 30
-preload_app = True
+preload_app = False  # Desativado para evitar problemas no Render
 
 # Configurações de Bind
-bind = "0.0.0.0:10000"  # Porta padrão do Render
+bind = "0.0.0.0:$PORT"  # Usar variável de ambiente do Render
 
 # Configurações de Buffer
 forwarded_allow_ips = '*'

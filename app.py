@@ -70,7 +70,10 @@ class EstatisticasCalculator:
 def pre_carregar_dados():
     """Pré-carrega os dados das ligas principais em cache"""
     for liga in LIGAS_PRINCIPAIS:
-        baixar_dados(liga)
+        try:
+            baixar_dados(liga)
+        except Exception as e:
+            print(f"Erro ao pré-carregar {liga}: {e}")
 
 @cache.memoize(timeout=300)
 def baixar_dados(liga):
@@ -528,4 +531,5 @@ def init_cache():
     pre_carregar_dados()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
