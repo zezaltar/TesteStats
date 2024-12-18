@@ -1,7 +1,7 @@
 import multiprocessing
 
 # Configurações de Workers
-workers = multiprocessing.cpu_count() * 2 + 1  # Fórmula recomendada: (2 x NUM_CORES) + 1
+workers = 4  # Número fixo de workers para o Render
 worker_class = 'sync'  # Usando worker sync que é bom para aplicações Flask
 worker_connections = 1000
 timeout = 30
@@ -12,6 +12,9 @@ max_requests = 1000
 max_requests_jitter = 50
 graceful_timeout = 30
 preload_app = True
+
+# Configurações de Bind
+bind = "0.0.0.0:10000"  # Porta padrão do Render
 
 # Configurações de Buffer
 forwarded_allow_ips = '*'
