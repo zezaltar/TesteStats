@@ -41,42 +41,24 @@ class EstatisticasCalculator:
         self.df = df
         
     def calcular_over_under(self, gols, tipo='FT'):
-        total = len(self.df)
-        if total == 0:
-            return 0
-            
         if tipo == 'HT':
             total_gols = self.df['HTHG'] + self.df['HTAG']
         else:
             total_gols = self.df['FTHG'] + self.df['FTAG']
-            
-        return (len(self.df[total_gols > gols]) / total) * 100
+        return len(self.df[total_gols > gols]) / len(self.df) * 100
     
     def calcular_btts(self):
-        total = len(self.df)
-        if total == 0:
-            return 0
-        return (len(self.df[(self.df['FTHG'] > 0) & (self.df['FTAG'] > 0)]) / total) * 100
+        if 'FTR' in self.df.columns:
+            ambos_marcam = ((self.df['FTHG'] > 0) & (self.df['FTAG'] > 0))
+            return len(self.df[ambos_marcam]) / len(self.df) * 100
+        return 0
     
     def calcular_media_gols(self):
-        if len(self.df) == 0:
-            return 0
-        return (self.df['FTHG'] + self.df['FTAG']).mean()
+        if 'FTR' in self.df.columns:
+            total_gols = self.df['FTHG'] + self.df['FTAG']
+            return total_gols.mean()
+        return 0
     
-    def calcular_clean_sheets(self, time, tipo='total'):
-        if tipo == 'casa':
-            df_filtrado = self.df[self.df['HomeTeam'] == time]
-            return (len(df_filtrado[df_filtrado['FTAG'] == 0]) / len(df_filtrado)) * 100 if len(df_filtrado) > 0 else 0
-        elif tipo == 'fora':
-            df_filtrado = self.df[self.df['AwayTeam'] == time]
-            return (len(df_filtrado[df_filtrado['FTHG'] == 0]) / len(df_filtrado)) * 100 if len(df_filtrado) > 0 else 0
-        else:
-            df_casa = self.df[self.df['HomeTeam'] == time]
-            df_fora = self.df[self.df['AwayTeam'] == time]
-            clean_sheets = len(df_casa[df_casa['FTAG'] == 0]) + len(df_fora[df_fora['FTHG'] == 0])
-            total_jogos = len(df_casa) + len(df_fora)
-            return (clean_sheets / total_jogos) * 100 if total_jogos > 0 else 0
-
 @cache.memoize(timeout=300)
 def baixar_dados(liga):
     url = LIGAS[liga]
@@ -120,189 +102,78 @@ def filtrar_dados_time(df, time, local=None):
         return df[(df['HomeTeam'] == time) | (df['AwayTeam'] == time)]
 
 def calcular_estatisticas(df, time, local=None):
-    dados = filtrar_dados_time(df, time, local)
-    if dados.empty:
+    df_time = filtrar_dados_time(df, time, local)
+    
+    if len(df_time) == 0:
         return None
     
-    total_jogos = len(dados)
-    if total_jogos == 0:
-        return None
-
-    # Estatísticas básicas de gols
+    # Inicializar calculadora
+    calc = EstatisticasCalculator(df_time)
+    
+    # Estatísticas básicas
+    jogos = len(df_time)
+    vitorias = len(df_time[df_time['FTR'] == ('H' if local == 'casa' else 'A')])
+    empates = len(df_time[df_time['FTR'] == 'D'])
+    derrotas = jogos - vitorias - empates
+    
+    # Cálculo de gols
     if local == 'casa':
-        gols_feitos = dados['FTHG'].sum()
-        gols_sofridos = dados['FTAG'].sum()
-        ht_gols_feitos = dados['HTHG'].sum()
-        ht_gols_sofridos = dados['HTAG'].sum()
-    elif local == 'fora':
-        gols_feitos = dados['FTAG'].sum()
-        gols_sofridos = dados['FTHG'].sum()
-        ht_gols_feitos = dados['HTAG'].sum()
-        ht_gols_sofridos = dados['HTHG'].sum()
+        gols_marcados = df_time['FTHG'].sum()
+        gols_sofridos = df_time['FTAG'].sum()
+        media_corners = (df_time['HC'] + df_time['AC']).mean()  # Total de escanteios por jogo
+        corners_over_85 = len(df_time[df_time['HC'] + df_time['AC'] > 8]) / jogos * 100
+        corners_over_95 = len(df_time[df_time['HC'] + df_time['AC'] > 9]) / jogos * 100
+        corners_over_105 = len(df_time[df_time['HC'] + df_time['AC'] > 10]) / jogos * 100
+        corners_over_115 = len(df_time[df_time['HC'] + df_time['AC'] > 11]) / jogos * 100
+        corners_over_125 = len(df_time[df_time['HC'] + df_time['AC'] > 12]) / jogos * 100
+        media_corners_favor = df_time['HC'].mean()
+        media_corners_contra = df_time['AC'].mean()
     else:
-        # Para estatísticas gerais, soma gols como mandante e visitante
-        gols_feitos = sum(dados[dados['HomeTeam'] == time]['FTHG']) + sum(dados[dados['AwayTeam'] == time]['FTAG'])
-        gols_sofridos = sum(dados[dados['HomeTeam'] == time]['FTAG']) + sum(dados[dados['AwayTeam'] == time]['FTHG'])
-        ht_gols_feitos = sum(dados[dados['HomeTeam'] == time]['HTHG']) + sum(dados[dados['AwayTeam'] == time]['HTAG'])
-        ht_gols_sofridos = sum(dados[dados['HomeTeam'] == time]['HTAG']) + sum(dados[dados['AwayTeam'] == time]['HTHG'])
+        gols_marcados = df_time['FTAG'].sum()
+        gols_sofridos = df_time['FTHG'].sum()
+        media_corners = (df_time['HC'] + df_time['AC']).mean()  # Total de escanteios por jogo
+        corners_over_85 = len(df_time[df_time['HC'] + df_time['AC'] > 8]) / jogos * 100
+        corners_over_95 = len(df_time[df_time['HC'] + df_time['AC'] > 9]) / jogos * 100
+        corners_over_105 = len(df_time[df_time['HC'] + df_time['AC'] > 10]) / jogos * 100
+        corners_over_115 = len(df_time[df_time['HC'] + df_time['AC'] > 11]) / jogos * 100
+        corners_over_125 = len(df_time[df_time['HC'] + df_time['AC'] > 12]) / jogos * 100
+        media_corners_favor = df_time['AC'].mean()
+        media_corners_contra = df_time['HC'].mean()
     
-    # Estatísticas de chutes (quando disponíveis)
-    chutes = 0
-    chutes_alvo = 0
-    if 'HS' in dados.columns and 'AS' in dados.columns:
-        if local == 'casa':
-            chutes = dados['HS'].sum() / total_jogos if total_jogos > 0 else 0
-        elif local == 'fora':
-            chutes = dados['AS'].sum() / total_jogos if total_jogos > 0 else 0
-        else:
-            chutes_casa = sum(dados[dados['HomeTeam'] == time]['HS'])
-            chutes_fora = sum(dados[dados['AwayTeam'] == time]['AS'])
-            chutes = (chutes_casa + chutes_fora) / total_jogos if total_jogos > 0 else 0
-
-    if 'HST' in dados.columns and 'AST' in dados.columns:
-        if local == 'casa':
-            chutes_alvo = dados['HST'].sum() / total_jogos if total_jogos > 0 else 0
-        elif local == 'fora':
-            chutes_alvo = dados['AST'].sum() / total_jogos if total_jogos > 0 else 0
-        else:
-            chutes_alvo_casa = sum(dados[dados['HomeTeam'] == time]['HST'])
-            chutes_alvo_fora = sum(dados[dados['AwayTeam'] == time]['AST'])
-            chutes_alvo = (chutes_alvo_casa + chutes_alvo_fora) / total_jogos if total_jogos > 0 else 0
-
-    # Estatísticas de cartões (quando disponíveis)
-    cartoes_amarelos = 0
-    cartoes_vermelhos = 0
-    if 'HY' in dados.columns and 'AY' in dados.columns:
-        if local == 'casa':
-            cartoes_amarelos = dados['HY'].sum() / total_jogos if total_jogos > 0 else 0
-        elif local == 'fora':
-            cartoes_amarelos = dados['AY'].sum() / total_jogos if total_jogos > 0 else 0
-        else:
-            amarelos_casa = sum(dados[dados['HomeTeam'] == time]['HY'])
-            amarelos_fora = sum(dados[dados['AwayTeam'] == time]['AY'])
-            cartoes_amarelos = (amarelos_casa + amarelos_fora) / total_jogos if total_jogos > 0 else 0
-
-    if 'HR' in dados.columns and 'AR' in dados.columns:
-        if local == 'casa':
-            cartoes_vermelhos = dados['HR'].sum() / total_jogos if total_jogos > 0 else 0
-        elif local == 'fora':
-            cartoes_vermelhos = dados['AR'].sum() / total_jogos if total_jogos > 0 else 0
-        else:
-            vermelhos_casa = sum(dados[dados['HomeTeam'] == time]['HR'])
-            vermelhos_fora = sum(dados[dados['AwayTeam'] == time]['AR'])
-            cartoes_vermelhos = (vermelhos_casa + vermelhos_fora) / total_jogos if total_jogos > 0 else 0
+    # Calcular aproveitamento
+    aproveitamento = (vitorias * 3 + empates) / (jogos * 3) * 100
     
-    # Resultados (corrigido para considerar local corretamente)
-    if local == 'casa':
-        vitorias = sum(dados['FTR'] == 'H')
-        empates = sum(dados['FTR'] == 'D')
-        derrotas = sum(dados['FTR'] == 'A')
-    elif local == 'fora':
-        vitorias = sum(dados['FTR'] == 'A')
-        empates = sum(dados['FTR'] == 'D')
-        derrotas = sum(dados['FTR'] == 'H')
-    else:
-        # Para estatísticas gerais, soma vitórias como mandante e visitante
-        vitorias = sum((dados['HomeTeam'] == time) & (dados['FTR'] == 'H')) + \
-                  sum((dados['AwayTeam'] == time) & (dados['FTR'] == 'A'))
-        empates = sum(dados['FTR'] == 'D')
-        derrotas = sum((dados['HomeTeam'] == time) & (dados['FTR'] == 'A')) + \
-                  sum((dados['AwayTeam'] == time) & (dados['FTR'] == 'H'))
-    
-    # Cálculo de over/under e BTTS
-    if local == 'casa':
-        over_05_ht = sum(dados['HTHG'] + dados['HTAG'] > 0) / total_jogos * 100
-        over_15_ht = sum(dados['HTHG'] + dados['HTAG'] > 1) / total_jogos * 100
-        over_05_ft = sum(dados['FTHG'] + dados['FTAG'] > 0) / total_jogos * 100
-        over_15_ft = sum(dados['FTHG'] + dados['FTAG'] > 1) / total_jogos * 100
-        over_25_ft = sum(dados['FTHG'] + dados['FTAG'] > 2) / total_jogos * 100
-        over_35_ft = sum(dados['FTHG'] + dados['FTAG'] > 3) / total_jogos * 100
-        btts = sum((dados['FTHG'] > 0) & (dados['FTAG'] > 0)) / total_jogos * 100
-    elif local == 'fora':
-        over_05_ht = sum(dados['HTHG'] + dados['HTAG'] > 0) / total_jogos * 100
-        over_15_ht = sum(dados['HTHG'] + dados['HTAG'] > 1) / total_jogos * 100
-        over_05_ft = sum(dados['FTHG'] + dados['FTAG'] > 0) / total_jogos * 100
-        over_15_ft = sum(dados['FTHG'] + dados['FTAG'] > 1) / total_jogos * 100
-        over_25_ft = sum(dados['FTHG'] + dados['FTAG'] > 2) / total_jogos * 100
-        over_35_ft = sum(dados['FTHG'] + dados['FTAG'] > 3) / total_jogos * 100
-        btts = sum((dados['FTHG'] > 0) & (dados['FTAG'] > 0)) / total_jogos * 100
-    else:
-        total_gols_ht = dados['HTHG'] + dados['HTAG']
-        total_gols_ft = dados['FTHG'] + dados['FTAG']
-        over_05_ht = sum(total_gols_ht > 0) / total_jogos * 100
-        over_15_ht = sum(total_gols_ht > 1) / total_jogos * 100
-        over_05_ft = sum(total_gols_ft > 0) / total_jogos * 100
-        over_15_ft = sum(total_gols_ft > 1) / total_jogos * 100
-        over_25_ft = sum(total_gols_ft > 2) / total_jogos * 100
-        over_35_ft = sum(total_gols_ft > 3) / total_jogos * 100
-        btts = sum((dados['FTHG'] > 0) & (dados['FTAG'] > 0)) / total_jogos * 100
-    
-    # Clean Sheets
-    if local == 'casa':
-        clean_sheets = sum(dados['FTAG'] == 0) / total_jogos * 100
-    elif local == 'fora':
-        clean_sheets = sum(dados['FTHG'] == 0) / total_jogos * 100
-    else:
-        clean_sheets_casa = sum((dados['HomeTeam'] == time) & (dados['FTAG'] == 0))
-        clean_sheets_fora = sum((dados['AwayTeam'] == time) & (dados['FTHG'] == 0))
-        clean_sheets = (clean_sheets_casa + clean_sheets_fora) / total_jogos * 100
-    
-    # Média de gols por jogo
-    media_gols = (gols_feitos + gols_sofridos) / total_jogos if total_jogos > 0 else 0
-    
-    # Calculando tendências para dicas
-    tendencias = []
-    
-    # Tendência de gols
-    if media_gols > 2.5:
-        tendencias.append(f"Time tem média alta de gols: {media_gols:.2f} por jogo")
-    
-    # Tendência de BTTS
-    if btts > 65:
-        tendencias.append(f"Alto índice de Ambas Marcam: {btts:.1f}%")
-    
-    # Tendência de Clean Sheets
-    if clean_sheets > 40:
-        tendencias.append(f"Boa defesa: {clean_sheets:.1f}% de jogos sem sofrer gols")
-    
-    # Tendência de cartões
-    if cartoes_amarelos > 2.5:
-        tendencias.append(f"Média alta de cartões: {cartoes_amarelos:.2f} amarelos por jogo")
-    
-    # Tendência de Over 2.5
-    if over_25_ft > 60:
-        tendencias.append(f"Frequente Over 2.5: {over_25_ft:.1f}% dos jogos")
-    
-    # Tendência de gols no primeiro tempo
-    ht_gols_media = (ht_gols_feitos + ht_gols_sofridos) / total_jogos
-    if over_05_ht > 70:
-        tendencias.append(f"Frequente gols HT: {over_05_ht:.1f}% dos jogos tem gols no 1º tempo")
-    
-    return {
-        'total_jogos': total_jogos,
-        'vitorias': int(vitorias),
-        'empates': int(empates),
-        'derrotas': int(derrotas),
-        'gols_feitos': int(gols_feitos),
+    # Estatísticas de Over/Under
+    stats = {
+        'jogos': jogos,
+        'vitorias': vitorias,
+        'empates': empates,
+        'derrotas': derrotas,
+        'gols_marcados': int(gols_marcados),
         'gols_sofridos': int(gols_sofridos),
-        'ht_gols_feitos': int(ht_gols_feitos),
-        'ht_gols_sofridos': int(ht_gols_sofridos),
-        'chutes': int(chutes),
-        'chutes_alvo': int(chutes_alvo),
-        'cartoes_amarelos': int(cartoes_amarelos),
-        'cartoes_vermelhos': int(cartoes_vermelhos),
-        'ht_over_05': over_05_ht,
-        'ht_over_15': over_15_ht,
-        'ft_over_05': over_05_ft,
-        'ft_over_15': over_15_ft,
-        'ft_over_25': over_25_ft,
-        'ft_over_35': over_35_ft,
-        'btts': btts,
-        'clean_sheets': clean_sheets,
-        'media_gols': media_gols,
-        'aproveitamento': (vitorias * 3 + empates) / (total_jogos * 3) * 100 if total_jogos > 0 else 0,
-        'tendencias': tendencias
+        'gols_por_jogo': round((gols_marcados + gols_sofridos) / jogos, 2),  # Média total de gols por jogo
+        'gols_sofridos_por_jogo': round(gols_sofridos / jogos, 2),
+        'aproveitamento': round(aproveitamento, 1),
+        'ht_over_05': calc.calcular_over_under(0.5, 'HT'),
+        'ht_over_15': calc.calcular_over_under(1.5, 'HT'),
+        'ft_over_05': calc.calcular_over_under(0.5),
+        'ft_over_15': calc.calcular_over_under(1.5),
+        'ft_over_25': calc.calcular_over_under(2.5),
+        'ft_over_35': calc.calcular_over_under(3.5),
+        'btts': calc.calcular_btts(),
+        'media_gols': calc.calcular_media_gols(),
+        # Novas estatísticas de escanteios
+        'media_corners': round(media_corners, 1),
+        'media_corners_favor': round(media_corners_favor, 1),
+        'media_corners_contra': round(media_corners_contra, 1),
+        'corners_over_85': round(corners_over_85, 1),
+        'corners_over_95': round(corners_over_95, 1),
+        'corners_over_105': round(corners_over_105, 1),
+        'corners_over_115': round(corners_over_115, 1),
+        'corners_over_125': round(corners_over_125, 1)
     }
+    
+    return stats
 
 def gerar_grafico_comparacao(stats1, stats2, time1, time2):
     categorias = ['Over 0.5 HT', 'Over 1.5 HT', 'Over 0.5 FT', 'Over 1.5 FT', 'Over 2.5 FT', 'Over 3.5 FT', 'BTTS']
@@ -338,30 +209,18 @@ def gerar_dicas_apostas(time1_stats, time2_stats):
         })
     
     # Análise de gols
-    if time1_stats['ft_over_15'] >= 75 and time2_stats['ft_over_15'] >= 75:
-        if time1_stats['ft_over_25'] >= 60 and time2_stats['ft_over_25'] >= 60:
-            dicas.append({
-                'tipo': 'Over 1.5 Gols',
-                'confianca': 'Alta',
-                'razao': f'Média de {media_gols:.1f} gols por jogo. Over 1.5: {time1_stats["ft_over_15"]:.1f}% e {time2_stats["ft_over_15"]:.1f}%'
-            })
-        
-    # Se over 2.5 tem confiança média mas over 1.5 é muito alto, sugere over 1.5
-    if (time1_stats['ft_over_25'] >= 55 and time2_stats['ft_over_25'] >= 55 and
-        time1_stats['ft_over_15'] >= 80 and time2_stats['ft_over_15'] >= 80):
-        dicas.append({
+    if (time1_stats['ft_over_15'] >= 75 and time2_stats['ft_over_15'] >= 75):
+        dica_over = {
             'tipo': 'Over 1.5 Gols',
             'confianca': 'Alta',
-            'razao': f'Times com alto % de Over 1.5: {time1_stats["ft_over_15"]:.1f}% e {time2_stats["ft_over_15"]:.1f}%'
-        })
-
-    # Análise de Clean Sheets para Under
-    if time1_stats['clean_sheets'] >= 50 and time2_stats['clean_sheets'] >= 50:
-        dicas.append({
-            'tipo': 'Under 2.5 Gols',
-            'confianca': 'Alta',
-            'razao': f'Times com bom % de Clean Sheets: {time1_stats["clean_sheets"]:.1f}% e {time2_stats["clean_sheets"]:.1f}%'
-        })
+            'razao': f'Média de {media_gols:.1f} gols por jogo. Over 1.5: {time1_stats["ft_over_15"]:.1f}% e {time2_stats["ft_over_15"]:.1f}%'
+        }
+        
+        # Se over 2.5 também tem boa confiança, adiciona essa informação à razão
+        if time1_stats['ft_over_25'] >= 60 and time2_stats['ft_over_25'] >= 60:
+            dica_over['razao'] += f'. Over 2.5: {time1_stats["ft_over_25"]:.1f}% e {time2_stats["ft_over_25"]:.1f}%'
+        
+        dicas.append(dica_over)
     
     # Análise de gols no primeiro tempo
     if time1_stats['ht_over_05'] >= 70 and time2_stats['ht_over_05'] >= 70:

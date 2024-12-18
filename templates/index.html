@@ -8,201 +8,282 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-bg: #ecf0f1;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition-speed: 0.3s;
         }
 
-        .stats-container {
-            margin-bottom: 20px;
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--primary-color);
         }
 
-        .stats-section {
-            margin-bottom: 20px;
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem 0;
         }
 
-        .stats-section h5 {
-            margin-bottom: 15px;
-            color: #333;
+        .navbar-brand {
             font-weight: 600;
-        }
-
-        .table {
-            margin-bottom: 0;
-            background-color: white;
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .table td, .table th {
-            padding: 8px 15px;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        .text-end {
-            text-align: right;
-        }
-
-        .comparison-chart {
-            height: 400px;
-            margin-bottom: 20px;
-            width: 100%;
+            font-size: 1.5rem;
+            letter-spacing: 0.5px;
         }
 
         .card {
-            margin-bottom: 20px;
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+            background: white;
+            overflow: hidden;
         }
 
-        /* Responsividade para dispositivos móveis */
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 1.2rem;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .form-select, .form-control {
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            padding: 0.6rem 1rem;
+            transition: border-color var(--transition-speed);
+        }
+
+        .form-select:focus, .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .btn {
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 500;
+            transition: all var(--transition-speed);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+
+        .table td {
+            vertical-align: middle;
+            border-color: #ecf0f1;
+        }
+
+        /* Cores para os resultados dos jogos */
+        .bg-win {
+            background-color: rgba(46, 204, 113, 0.1) !important;
+            color: #27ae60 !important;
+        }
+
+        .bg-draw {
+            background-color: rgba(241, 196, 15, 0.1) !important;
+            color: #f39c12 !important;
+        }
+
+        .bg-loss {
+            background-color: rgba(231, 76, 60, 0.1) !important;
+            color: #c0392b !important;
+        }
+
+        /* Estilo para as dicas de apostas */
+        .betting-tips {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .tip-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--accent-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .tip-card.high-confidence {
+            border-left-color: var(--success-color);
+        }
+
+        .tip-card h5 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .tip-card .confidence {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .tip-card .confidence.high {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success-color);
+        }
+
+        .tip-card .reason {
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+
+        /* Responsividade */
         @media (max-width: 768px) {
             .container {
-                padding: 10px;
+                padding: 1rem;
+            }
+
+            .card-header {
+                padding: 1rem;
             }
 
             .card-body {
-                padding: 15px 10px;
-            }
-
-            .comparison-chart {
-                height: 300px;
-            }
-
-            .table td, .table th {
-                padding: 6px 8px;
-                font-size: 14px;
+                padding: 1rem;
             }
 
             .navbar-brand {
                 font-size: 1.2rem;
             }
 
-            h3 {
-                font-size: 1.5rem;
-            }
-
-            h5 {
-                font-size: 1.1rem;
-            }
-
-            .btn {
-                padding: 0.375rem 0.75rem;
-                font-size: 14px;
-            }
-
-            .form-select, .form-control {
-                font-size: 14px;
+            .betting-tips {
+                padding: 1rem;
             }
         }
 
-        /* Ajustes para telas muito pequenas */
-        @media (max-width: 576px) {
-            .comparison-chart {
-                height: 250px;
-            }
-
-            .card-header {
-                padding: 10px;
-            }
-
-            .table td, .table th {
-                padding: 4px 6px;
-                font-size: 12px;
-            }
-
-            .btn {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-        }
-
-        /* Ajustes para tablets */
-        @media (min-width: 769px) and (max-width: 992px) {
-            .comparison-chart {
-                height: 350px;
-            }
-
-            .card-body {
-                padding: 20px 15px;
-            }
-        }
-
-        /* Melhorias na acessibilidade */
-        .btn:focus, .form-select:focus, .form-control:focus {
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-            outline: none;
-        }
-
-        /* Animações suaves */
-        .card {
-            transition: transform 0.2s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Estilos do gráfico e container */
-        .comparison-chart-container {
-            position: relative;
+        /* Loading spinner */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            margin: 20px 0;
-            overflow: hidden;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.25rem;
+            color: var(--accent-color);
+        }
+
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stats-section {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: var(--secondary-color);
+            font-weight: 500;
+            padding: 0.8rem 1.2rem;
+            transition: all var(--transition-speed);
+        }
+
+        .nav-tabs .nav-link:hover {
+            border: none;
+            color: var(--accent-color);
+        }
+
+        .nav-tabs .nav-link.active {
+            border: none;
+            border-bottom: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* Estilo para o gráfico de comparação */
+        .comparison-chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            box-shadow: var(--card-shadow);
         }
 
         .comparison-chart {
-            width: 100%;
-            height: 400px;
-            margin: 0;
-            padding: 0;
-            z-index: 1;
+            min-height: 400px;
         }
 
-        /* Ajustes para o container de estatísticas */
-        .stats-cards-container {
-            margin-top: 20px;
-            z-index: 2;
-            position: relative;
-            background: white;
-        }
-
-        .stats-card {
-            background: white;
-            border: 1px solid rgba(0,0,0,.125);
-            border-radius: .25rem;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        /* Media queries para responsividade */
-        @media (max-width: 768px) {
-            .comparison-chart {
-                height: 300px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .comparison-chart {
-                height: 250px;
-            }
+        /* Estilo para mensagens de erro */
+        .error-message {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-primary mb-4">
+    <nav class="navbar navbar-dark mb-4">
         <div class="container">
-            <span class="navbar-brand mb-0 h1">Análise de Futebol</span>
+            <span class="navbar-brand">
+                <i class="fas fa-futbol me-2"></i>
+                Análise de Futebol
+            </span>
         </div>
     </nav>
 
@@ -211,6 +292,12 @@
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Carregando...</span>
             </div>
+        </div>
+        
+        <!-- Mensagem de erro -->
+        <div id="errorMessage" class="error-message" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span id="errorText"></span>
         </div>
 
         <div class="row g-4">
@@ -374,7 +461,7 @@
                         <div id="comparisonStats" class="d-none">
                             <!-- Container do gráfico -->
                             <div class="comparison-chart-container">
-                                <div id="comparacaoGrafico" class="comparison-chart"></div>
+                                <div id="comparisonChart" class="comparison-chart"></div>
                             </div>
                             
                             <!-- Container das estatísticas -->
@@ -595,160 +682,105 @@
 
         function exibirEstatisticas(stats, elementId) {
             const element = document.getElementById(elementId);
-            if (!stats) {
-                element.innerHTML = '<div class="alert alert-warning">Não há dados disponíveis para este time.</div>';
-                return;
-            }
+            if (!stats || !element) return;
 
-            element.innerHTML = `
-                <div class="stats-container">
-                    <div class="stats-section">
-                        <h5>Desempenho</h5>
-                        <table class="table table-striped">
-                            <tbody>
-                                <tr>
-                                    <td>Jogos</td>
-                                    <td class="text-end"><strong>${stats.total_jogos}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Vitórias</td>
-                                    <td class="text-end"><strong>${stats.vitorias}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Empates</td>
-                                    <td class="text-end"><strong>${stats.empates}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Derrotas</td>
-                                    <td class="text-end"><strong>${stats.derrotas}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Aproveitamento</td>
-                                    <td class="text-end"><strong>${stats.aproveitamento.toFixed(1)}%</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            let html = `
+                <div class="stats-section">
+                    <h5>Desempenho</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <td>Jogos</td>
+                            <td class="text-end">${stats.jogos}</td>
+                        </tr>
+                        <tr>
+                            <td>Vitórias</td>
+                            <td class="text-end">${stats.vitorias}</td>
+                        </tr>
+                        <tr>
+                            <td>Empates</td>
+                            <td class="text-end">${stats.empates}</td>
+                        </tr>
+                        <tr>
+                            <td>Derrotas</td>
+                            <td class="text-end">${stats.derrotas}</td>
+                        </tr>
+                        <tr>
+                            <td>Aproveitamento</td>
+                            <td class="text-end">${stats.aproveitamento}%</td>
+                        </tr>
+                    </table>
+                </div>
 
-                    <div class="stats-section">
-                        <h5>Gols</h5>
-                        <table class="table table-striped">
-                            <tbody>
-                                <tr>
-                                    <td>Gols Marcados</td>
-                                    <td class="text-end"><strong>${stats.gols_feitos}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Gols Sofridos</td>
-                                    <td class="text-end"><strong>${stats.gols_sofridos}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Gols 1º Tempo (Marcados)</td>
-                                    <td class="text-end"><strong>${stats.ht_gols_feitos}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Gols 1º Tempo (Sofridos)</td>
-                                    <td class="text-end"><strong>${stats.ht_gols_sofridos}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Média de Gols p/ Jogo</td>
-                                    <td class="text-end"><strong>${stats.media_gols.toFixed(2)}</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="stats-section">
+                    <h5>Gols</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <td>Gols Marcados</td>
+                            <td class="text-end">${stats.gols_marcados}</td>
+                        </tr>
+                        <tr>
+                            <td>Gols Sofridos</td>
+                            <td class="text-end">${stats.gols_sofridos}</td>
+                        </tr>
+                        <tr>
+                            <td>Média de Gols p/ Jogo</td>
+                            <td class="text-end">${stats.gols_por_jogo}</td>
+                        </tr>
+                    </table>
+                </div>
 
-                    <div class="stats-section">
-                        <h5>Estatísticas Adicionais</h5>
-                        <table class="table table-striped">
-                            <tbody>
-                                <tr>
-                                    <td>Chutes por Jogo</td>
-                                    <td class="text-end"><strong>${stats.chutes.toFixed(1)}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Chutes no Alvo por Jogo</td>
-                                    <td class="text-end"><strong>${stats.chutes_alvo.toFixed(1)}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Cartões Amarelos por Jogo</td>
-                                    <td class="text-end"><strong>${stats.cartoes_amarelos.toFixed(2)}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Cartões Vermelhos por Jogo</td>
-                                    <td class="text-end"><strong>${stats.cartoes_vermelhos.toFixed(2)}</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="stats-section">
+                    <h5>Escanteios</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <td>Média p/ Jogo</td>
+                            <td class="text-end">${stats.media_corners}</td>
+                        </tr>
+                        <tr>
+                            <td>A Favor (Média)</td>
+                            <td class="text-end">${stats.media_corners_favor}</td>
+                        </tr>
+                        <tr>
+                            <td>Contra (Média)</td>
+                            <td class="text-end">${stats.media_corners_contra}</td>
+                        </tr>
+                    </table>
+                </div>
 
-                    <div class="stats-section">
-                        <h5>Over/Under</h5>
-                        <table class="table table-striped">
-                            <tbody>
-                                <tr>
-                                    <td>Over 0.5 HT</td>
-                                    <td class="text-end"><strong>${stats.ht_over_05.toFixed(1)}%</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Over 1.5 HT</td>
-                                    <td class="text-end"><strong>${stats.ht_over_15.toFixed(1)}%</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Over 0.5 FT</td>
-                                    <td class="text-end"><strong>${stats.ft_over_05.toFixed(1)}%</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Over 1.5 FT</td>
-                                    <td class="text-end"><strong>${stats.ft_over_15.toFixed(1)}%</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Over 2.5 FT</td>
-                                    <td class="text-end"><strong>${stats.ft_over_25.toFixed(1)}%</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Over 3.5 FT</td>
-                                    <td class="text-end"><strong>${stats.ft_over_35.toFixed(1)}%</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="stats-section">
-                        <h5>Outras Estatísticas</h5>
-                        <table class="table table-striped">
-                            <tbody>
-                                <tr>
-                                    <td>BTTS (Ambos Marcam)</td>
-                                    <td class="text-end"><strong>${stats.btts.toFixed(1)}%</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Clean Sheets</td>
-                                    <td class="text-end"><strong>${stats.clean_sheets.toFixed(1)}%</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    ${stats.tendencias && stats.tendencias.length > 0 ? `
-                    <div class="stats-section">
-                        <h5>Dicas para Apostas</h5>
-                        <div class="alert alert-info">
-                            <ul class="mb-0">
-                                ${stats.tendencias.map(tendencia => `<li>${tendencia}</li>`).join('')}
-                            </ul>
-                        </div>
-                    </div>
-                    ` : ''}
+                <div class="stats-section">
+                    <h5>Over Escanteios (% dos jogos)</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <td>Over 8.5</td>
+                            <td class="text-end">${stats.corners_over_85}%</td>
+                        </tr>
+                        <tr>
+                            <td>Over 9.5</td>
+                            <td class="text-end">${stats.corners_over_95}%</td>
+                        </tr>
+                        <tr>
+                            <td>Over 10.5</td>
+                            <td class="text-end">${stats.corners_over_105}%</td>
+                        </tr>
+                        <tr>
+                            <td>Over 11.5</td>
+                            <td class="text-end">${stats.corners_over_115}%</td>
+                        </tr>
+                        <tr>
+                            <td>Over 12.5</td>
+                            <td class="text-end">${stats.corners_over_125}%</td>
+                        </tr>
+                    </table>
                 </div>
             `;
-            element.classList.remove('d-none');
+
+            element.innerHTML = html;
         }
 
         function exibirUltimosJogos(jogos) {
             const lista = document.getElementById('ultimosJogos');
             lista.innerHTML = `
-                <table class="table table-striped">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Data</th>
@@ -758,14 +790,25 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${jogos.map(jogo => `
-                            <tr>
-                                <td>${jogo.data}</td>
-                                <td>${jogo.casa ? 'Casa' : 'Fora'}</td>
-                                <td>${jogo.adversario}</td>
-                                <td><strong>${jogo.gols_favor} - ${jogo.gols_contra}</strong></td>
-                            </tr>
-                        `).join('')}
+                        ${jogos.map(jogo => {
+                            let resultado;
+                            if (jogo.gols_favor > jogo.gols_contra) {
+                                resultado = 'vitoria';
+                            } else if (jogo.gols_favor < jogo.gols_contra) {
+                                resultado = 'derrota';
+                            } else {
+                                resultado = 'empate';
+                            }
+                            
+                            return `
+                                <tr class="resultado-${resultado}">
+                                    <td>${jogo.data}</td>
+                                    <td>${jogo.casa ? 'Casa' : 'Fora'}</td>
+                                    <td>${jogo.adversario}</td>
+                                    <td><strong>${jogo.gols_favor} - ${jogo.gols_contra}</strong></td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
             `;
@@ -778,40 +821,23 @@
                 return;
             }
 
-            const html = `
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Dicas de Apostas</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Dica</th>
-                                        <th>Confiança</th>
-                                        <th>Razão</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${dicas.map(dica => `
-                                        <tr>
-                                            <td><strong>${dica.tipo}</strong></td>
-                                            <td>
-                                                <span class="badge ${dica.confianca === 'Alta' ? 'bg-success' : 'bg-warning'}">
-                                                    ${dica.confianca}
-                                                </span>
-                                            </td>
-                                            <td>${dica.razao}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
+            let html = '<div class="list-group">';
+            dicas.forEach(dica => {
+                const confiancaClass = dica.confianca === 'Alta' ? 'text-success' : 'text-warning';
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-1">${dica.tipo}</h6>
+                            <span class="${confiancaClass}">
+                                <i class="fas fa-check-circle"></i>
+                                Confiança ${dica.confianca}
+                            </span>
                         </div>
+                        <p class="mb-1 text-muted small">${dica.razao}</p>
                     </div>
-                </div>
-            `;
-            
+                `;
+            });
+            html += '</div>';
             container.innerHTML = html;
         }
 
@@ -860,7 +886,7 @@
                     }
 
                     // Atualizar gráfico de comparação
-                    Plotly.newPlot('comparacaoGrafico', JSON.parse(data.grafico));
+                    Plotly.newPlot('comparisonChart', JSON.parse(data.grafico));
 
                     // Atualizar estatísticas dos times
                     exibirEstatisticas(data.time1, 'time1Stats');
@@ -911,6 +937,60 @@
             atualizarTimes(this, document.getElementById('time1Select'));
             atualizarTimes(this, document.getElementById('time2Select'));
         });
+
+        function mostrarErro(mensagem) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = mensagem;
+            errorDiv.style.display = 'block';
+            errorDiv.classList.add('shake');
+            
+            // Remove a animação após ela terminar
+            setTimeout(() => {
+                errorDiv.classList.remove('shake');
+            }, 1000);
+            
+            // Esconde a mensagem após 5 segundos
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function tratarErroRequisicao(response) {
+            if (!response.ok) {
+                throw new Error(`Erro ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        }
+
+        // Modificar função existente para usar tratamento de erro
+        async function atualizarEstatisticas() {
+            try {
+                mostrarLoading();
+                const time = document.getElementById('timeSelect').value;
+                const liga = document.getElementById('ligaSelect').value;
+                
+                if (!time || !liga) {
+                    throw new Error('Selecione uma liga e um time');
+                }
+                
+                const response = await fetch(`/estatisticas/${liga}/${time}`);
+                const data = await tratarErroRequisicao(response);
+                
+                if (!data || !data.stats) {
+                    throw new Error('Dados não disponíveis para este time');
+                }
+                
+                exibirEstatisticas(data.stats, 'timeStats');
+                document.getElementById('timeStats').classList.remove('d-none');
+                
+            } catch (error) {
+                mostrarErro(error.message);
+                document.getElementById('timeStats').classList.add('d-none');
+            } finally {
+                ocultarLoading();
+            }
+        }
     </script>
 </body>
 </html>
